@@ -1,0 +1,25 @@
+eureka:
+  client:
+    service-url:
+      default-zone: http://localhost:8761/eureka
+
+server:
+  port: 8768
+
+spring:
+  application:
+    name: service-web
+  datasource:
+    url: jdbc:mysql://localhost:3306/netdisk
+    username: *****
+    password: *****
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  redis:
+    database: 0
+    host: localhost
+    port: 6379
+  mvc:
+    view:
+      suffix: .html
+      prefix: /
+

@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <title>Test</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+    <script src="https://cdn.staticfile.org/jquery/1.10.2/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+
+    <script>
+        var page = {
+            init: function() {
+                $("#upload-item").hide();
+                $("#progress-item").hide();
+                $("#upload").click(function () {
+                    var file = $("#file")[0].files[0];
+                    $("#progress-item").show();
+                    upload(file, null);
+                });
+                let token = window.localStorage.getItem("token");
+                if (token == null) {
+                    location.href = "/web";
+                }
+                else {
+                    getUserFileList();
+                }
+            }
+        };
+
+        $(function () {
+            page.init();
+        });
+
+        var getUserInfoUrl = "/web/file/allfiles";
+
+        function getUserFileList() {
+            $.ajax({
+                url: getUserInfoUrl,
+                type: "GET",
+                headers: {
+                    "token": window.localStorage.getItem("token"),
+                },
+                success: function(data) {
+                    console.log(data);
+                    setFileList(data);
+                }
+
+            });
+        }
+
+        function setFileList(data) {
+            var fileNums = data.fileNums;
+            var fileArr = data.userFileList;
+            clearFileListAndAddHead(fileNums);
+            for (var i = 0; i < fileNums; i++) {
+                addFileToList(fileArr[i]);
+            }
+        }
+
+        function clearFileListAndAddHead(fileNums) {
+            $("#file-list").empty();
+            $("#file-list").append("<a href=\"#\" class=\"list-group-item active\">\n" +
+                "                    <h1>" + fileNums +"个文件</h1>\n" +
+                "                </a>");
+        }
+
+        function addFileToList(file) {
+            var h = "<a href=\"#\" class=\"list-group-item\">\n" +
+                "                    <h3>" + file.filename + "</h3>\n" +
+                "                </a>";
+
+            $("#file-list").append(h);
+        }
+
+        function showUpload() {
+            $("#upload-item").show();
+        }
+
+    </script>
+    <script>
+        var blockSize = 5 * 1024 * 1024;
+
+        var uploadUrl = "/storge/file/upload";
+
+        function upload(file, param) {
+            if (param == null) {
+                var filesize = file.size;
+                param = {
+                    filename: file.name,
+                    fileSize: filesize,
+                    fileBlockNums: Math.ceil(filesize / blockSize),
+                    testMd5: " ",
+                    uuid: " ",
+                    currentBlock: 0
+                }
+            }
+            if (param.currentBlock < param.fileBlockNums) {
+                var start = param.currentBlock * blockSize;
+                var end = Math.min(param.fileSize, start + blockSize);
+                var fileBlock = file.slice(start, end);
+
+                var form = new FormData();
+                form.append("fileBlock", fileBlock);
+                form.append("filename", param.filename);
+                form.append("filesize", param.fileSize);
+                form.append("fileBlockNums", param.fileBlockNums);
+                form.append("currentBlock", param.currentBlock + 1);
+                form.append("md5", param.testMd5);
+                form.append("uuid", param.uuid);
+
+                $.ajax({
+                    url: uploadUrl,
+                    type: "POST",
+                    headers: {
+                        "token": window.localStorage.getItem("token"),
+                    },
+                    data: form,
+                    async: true,
+                    processData: false,
+                    contentType: false,
+                    success: function (data) {
+                        if (param.currentBlock == 0) {
+                            param.uuid = data;
+                        }
+                        // $("#process").text((param.currentBlock + 1) / param.fileBlockNums + '%');
+                        $("#progress-bar").css("width", ((param.currentBlock + 1) / param.fileBlockNums) * 100 + '%')
+                        param.currentBlock++;
+                        upload(file, param);
+                    },
+                    error: function (e) {
+                        alert(JSON.stringify(e));
+                    }
+                });
+            }
+            else {
+                page.init();
+            }
+
+
+        }
+    </script>
+</head>
+
+<body>
+<div class="container">
+    <div class="row">
+        <div class="col-md-4">
+            <ul class="nav nav-pills nav-stacked" data-spy="affix" data-offset-top="150">
+                <li role="nav-item"><a onclick="page.init()"><h3>文件</h3></a></li>
+                <li role="nav-item"><a href="#"><h3>分享</h3></a></li>
+                <li role="nav-item"><a onclick="showUpload()"><h3>上传</h3></a></li>
+                <li role="nav-item" id="upload-item">
+                    <input type="file" id="file" class="form-control"/>
+                    <button id="upload" class="btn btn-primary">upload</button>
+                </li>
+                <li role="nav-item" id="progress-item">
+                    <div class="progress">
+                        <div class="progress-bar" role="progressbar" aria-valuenow="60"
+                             aria-valuemin="0" aria-valuemax="100" style="width: 0%;" id="progress-bar">
+                            <span class="sr-only">40% 完成</span>
+                        </div>
+                    </div>
+                </li>
+
+            </ul>
+        </div>
+        <div class="col-md-8">
+            <div class="list-group pre-scrollable" style="height: 0px; padding-bottom: 100%;" id="file-list">
+                <a href="#" class="list-group-item active">
+                    <h1>第一行</h1>
+                </a>
+
+
+
+            </div>
+        </div>
+    </div>
+</div>
+
+
+</body>
+</html>

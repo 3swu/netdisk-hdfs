@@ -1,0 +1,56 @@
+eureka:
+  client:
+    service-url:
+      default-zone: http://localhost:8761/eureka/
+
+server:
+  port: 8769
+
+spring:
+  application:
+    name: service-zuul
+  datasource:
+    url: jdbc:mysql://localhost:3306/netdisk
+    username: *****
+    password: *****
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  servlet:
+    multipart:
+      max-file-size: 10MB
+
+zuul:
+  host:
+    connect-timeout-millis: 15000000
+    socket-timeout-millis: 60000000
+  routes:
+    oauth:
+      path: /oauth/**
+      service-id: service-zuul
+    hdfs:
+      path: /storge/**
+      service-id: service-hdfs
+    web:
+      path: /web/**
+      service-id: service-web
+
+jwt:
+  secret: testsecretbbbbbbbbbbbbbbbbb
+  exp-days: 7
+
+data-filter:
+  auth-path:
+
+  user-login-path: /oauth/login
+
+  whitelist:
+    - /oauth/login
+    - /oauth/user
+    - /web
+    - /web/register
+    - /web/files
+ribbon:
+  eureka:
+    enabled: true
+  ReadTimeout: 10000000
+  ConnectTimeout: 10000000

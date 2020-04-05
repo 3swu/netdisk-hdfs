@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>登录</title>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+    <script src="https://cdn.staticfile.org/jquery/1.10.2/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+    <script>
+        const loginUrl = "/oauth/login";
+        const indexUrl = "/web/files";
+
+        $(function () {
+            $("#login-btn").click(function () {
+
+                var username = $("#username-input").val();
+                var password = $("#password-input").val();
+
+                if (username.length < 6 || username.length > 12) {
+                    alert("用户名长度必须大于6个字符小于12个字符")
+                }
+                else if (password.length < 6 || password.length > 12) {
+                    alert("密码长度必须大于6个字符小于12个字符")
+                }
+                else
+                    login(username, password);
+
+            });
+
+            $("#register-btn").click(function () {
+                location.href = "/web/register";
+            });
+        });
+
+        function login(username, password) {
+            data = {
+                username: username,
+                password: password
+            };
+            $.ajax({
+                url: loginUrl,
+                type: "POST",
+                data: JSON.stringify(data),
+                contentType: "application/json",
+                success: function (data, testStatus, request) {
+                    if (data.length == 0) {
+                        alert("用户名或密码错误");
+                    }
+                    else {
+                        // data = JSON.parse(data);
+                        username = data.username;
+                        token = request.getResponseHeader("token");
+                        window.localStorage.setItem("token", token);
+                        window.localStorage.setItem("username", username);
+                        redirect();
+                    }
+                }
+            });
+        }
+
+        function redirect(token) {
+            location.href = indexUrl;
+        }
+    </script>
+</head>
+<body>
+
+<header class="page-header text-center">
+    <h1>登录</h1>
+</header>
+<div class="container">
+    <div class="row">
+        <div class="col-md-4"></div>
+        <div class="col-md-4">
+            <div class="form-horizontal">
+                <div class="form-group">
+                    <label class="col-sm-4 control-label">用户名</label>
+                    <div class="col-sm-8">
+                        <input type="text" class="form-control" name="" placeholder="请输入用户名" id="username-input">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="col-sm-4 control-label">密码</label>
+                    <div class="col-sm-8">
+                        <input type="password" class="form-control" name="" placeholder="请输入密码" id="password-input">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="col-sm-4">
+
+                    </div>
+                    <div class="col-sm-8">
+                        <button class="btn btn-success" id="login-btn">登录</button>
+                        <button class="btn btn-primary" id="register-btn">注册</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4"></div>
+    </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>UpLoad</title>
+    <script src="http://cdn.bootcss.com/jquery/1.12.4/jquery.min.js"></script>
+    <script>
+        var blockSize = 5 * 1024 * 1024;
+        var page = {
+            init: function () {
+                $("#upload").click(function () {
+                    var file = $("#file")[0].files[0];
+                    upload(file, null);
+                })
+            }
+        };
+
+        var uploadUrl = "/file/upload";
+
+        $(function () {
+            page.init();
+        });
+
+        function upload(file, param) {
+            if (param == null) {
+                var filesize = file.size;
+                param = {
+                    filename: file.name,
+                    fileSize: filesize,
+                    fileBlockNums: Math.ceil(filesize / blockSize),
+                    testMd5: " ",
+                    uuid: " ",
+                    currentBlock: 0
+                }
+            }
+            if (param.currentBlock < param.fileBlockNums) {
+                var start = param.currentBlock * blockSize;
+                var end = Math.min(param.fileSize, start + blockSize);
+                var fileBlock = file.slice(start, end);
+
+                var form = new FormData();
+                form.append("fileBlock", fileBlock);
+                form.append("filename", param.filename);
+                form.append("filesize", param.fileSize);
+                form.append("fileBlockNums", param.fileBlockNums);
+                form.append("currentBlock", param.currentBlock + 1);
+                form.append("md5", param.testMd5);
+                form.append("uuid", param.uuid);
+
+                $.ajax({
+                    url: uploadUrl,
+                    type: "POST",
+                    data: form,
+                    headers: {"id": 1},
+                    async: true,
+                    processData: false,
+                    contentType: false,
+                    success: function (data) {
+                        if (param.currentBlock == 0) {
+                            param.uuid = data;
+                            $("#uuid").text(data);
+                        }
+                        $("#process").text((param.currentBlock + 1) * 1.0 / param.fileBlockNums + '%');
+                        param.currentBlock++;
+                        upload(file, param);
+                    },
+                    error: function (e) {
+                        alert(JSON.stringify(e));
+                    }
+                });
+            }
+
+
+        }
+    </script>
+</head>
+<body>
+<input type="file" id="file" />
+<button id="upload">upload</button>
+<br/>
+<span id="process"></span>
+<span id="output"></span>
+<span id="uuid">id:</span>
+</body>
+</html>
